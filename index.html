@@ -161,7 +161,8 @@
             text: `${surah.nama} | ${surah.asma} | arti : ${surah.arti} | surah ke : ${surah.nomor} | jumlah ayat : ${surah.ayat}`,
             icon: "success",
             content: wrapper,
-            buttons: false, // Menghilangkan tombol OK jika tidak diperlukan
+             showConfirmButton: false,
+      		showCancelButton: false,
           });
         }).catch(err => {
           if (err) {
