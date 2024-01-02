@@ -1,3 +1,4 @@
+<html>
 <script>
 fetch('https://fauzi8162.github.io/quran/quran-surah.json')
   .then(response => {
@@ -14,3 +15,4 @@ fetch('https://fauzi8162.github.io/quran/quran-surah.json')
     console.error('Fetch error:', error);
   });
 </script>
+  </html>
