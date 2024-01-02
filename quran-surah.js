@@ -1,3 +1,4 @@
+<script>
 fetch('https://fauzi8162.github.io/quran/quran-surah.json')
   .then(response => {
     if (!response.ok) {
@@ -12,3 +13,4 @@ fetch('https://fauzi8162.github.io/quran/quran-surah.json')
   .catch(error => {
     console.error('Fetch error:', error);
   });
+</script>
