@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>quran api by riozi_25</title>
+    <title>Quran App by riozi_25</title>
     <style>
       body {
         font-family: Arial, sans-serif;
@@ -40,6 +40,25 @@
         cursor: pointer;
       }
 
+      .clearfix::after {
+        content: "";
+        display: table;
+        clear: both;
+      }
+
+      #btnSurah {
+        display: block;
+        width: 50%;
+        padding: 10px;
+        margin: 10px 0 -15px;
+        background-color: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        float: right;
+      }
+
       audio {
         width: 100%;
         margin-top: 20px;
@@ -48,7 +67,7 @@
       table {
         width: 100%;
         border-collapse: collapse;
-        margin-top: 20px;
+        margin-top: 50px;
       }
 
       th,
@@ -79,8 +98,10 @@
       td.arab {
         font-family: 'LPMQ IsepMisbah', sans-serif;
         /* Gunakan nama font yang Anda tetapkan di @font-face */
-        font-size: 20px;
+        font-size: 25px;
         font-weight: bold;
+        line-height: 2;
+        text-align: right;
       }
 
       footer {
@@ -111,19 +132,31 @@
     <!-- <script src="../lib/sweetalert.min.js"></script> -->
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <header>
-      <h1>Alquran Apps</h1>
-      <h4>source : Quran Kemenag Rest API | web-api.qurankemenag.net</h4>
+      <h1>Al-Qur'an Apps</h1>
+      <h4>source : Quran Kemenag Rest API</h4>
     </header>
     <div class="container">
       <button id="btnCari">Cari Surah</button>
       <div id="infoSurah" align="center"></div>
-      <audio id="audioPlayer" controls>
+      <audio id="audioPlayer">
         <source src="" type="audio/mp3"> Your browser does not support the audio element.
       </audio>
       <audio id="audioPlayerAyah">
         <source src="" type="audio/mp3"> Your browser does not support the audio element.
       </audio>
-      <div id="infoAyat" align="center" style="display: none;">
+      <div id="infoAyat" align="center" style="display: none;"></div>
+      <div class="clearfix">
+        <button id="btnSurah">Tampilkan daftar surah</button>
+      </div>
+	  
+      <div id="tabelSurah" align="center" style="display: block;">
+        <table id="tableSurah">
+          <tbody>
+          <tbody id="dataSurah"></tbody>
+        </table>
+      </div>
+	  
+      <div id="tabelAyah" align="center" style="display: none;">
         <table>
           <thead>
             <tr>
@@ -137,33 +170,76 @@
       </div>
     </div>
     <script>
-      var getSurah; //menyimpan data sudah yg berhasil dicari
-      var dataKeyword; //menyimpan kata kunci yang dicari user
-      var dataJSONSurah = "";
-      var dataJSONSurah2 = "";
-      var apiAudioFull = "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/"; // 001.mp3
-      var apiAudioAyah = "https://media.qurankemenag.net/audio/Abu_Bakr_Ash-Shaatree_aac64/"; // 002007.m4a
-      var apiSurah2 = "https://quran-api.santrikoding.com/api/surah"; // saya gunakan untuk ambil deskripsinya saja
-      var apiSurah = "https://web-api.qurankemenag.net/quran-surah";
-      var apiAyah = "https://web-api.qurankemenag.net/quran-ayah?surah=";
-      // var apiAyah = "https://web-api.qurankemenag.net/quran-ayah?start=0&limit=10&surah=2"; 
-      /*
-      api Ayah parameter
-      ex : https://web-api.qurankemenag.net/quran-ayah?start=5&limit=20&surah=2
-      will showing surah number 2(al baqarah) from ayah 6 - ayah 25 (coz limit is showing until ayah n & start is showing from n)
-      */
-      var btnCari = document.getElementById('btnCari');
-      var infoAyat = document.getElementById('infoAyat');
-      var nomorCell = document.getElementById('nomor');
-      var arabCell = document.getElementById('arab');
-      var terjemahanCell = document.getElementById('terjemahan');
-      var indonesiaCell = document.getElementById('indonesia');
-      var audioAyah = document.getElementById('audioPlayerAyah');
-      var mainAudio = document.getElementById('audioPlayer');
-      mainAudio.addEventListener('play', function() {
-        audioAyah.pause();
-        // Tambahkan logika atau panggil fungsi yang ingin Anda eksekusi saat tombol play diklik
-      });
+		var getSurah; //menyimpan data sudah yg berhasil dicari
+		var dataKeyword; //menyimpan kata kunci yang dicari user
+		dataJSONSurah = "";
+		var dataJSONSurah2 = "";
+		var apiAudioFull = "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/"; // 001.mp3
+		var apiAudioAyah = "https://media.qurankemenag.net/audio/Abu_Bakr_Ash-Shaatree_aac64/"; // 002007.m4a
+		var apiSurah2 = "https://quran-api.santrikoding.com/api/surah"; // saya gunakan untuk ambil deskripsinya saja
+		var apiSurah = "https://web-api.qurankemenag.net/quran-surah";
+		var apiAyah = "https://web-api.qurankemenag.net/quran-ayah?surah=";
+		var btnCari = document.getElementById('btnCari');
+		var infoAyat = document.getElementById('infoAyat');
+		var tabelAyah = document.getElementById('tabelAyah');
+		var nomorCell = document.getElementById('nomor');
+		var arabCell = document.getElementById('arab');
+		var terjemahanCell = document.getElementById('terjemahan');
+		var indonesiaCell = document.getElementById('indonesia');
+		var audioAyah = document.getElementById('audioPlayerAyah');
+		var mainAudio = document.getElementById('audioPlayer');
+		var btnSurah = document.getElementById('btnSurah');
+		var tabelDataSurah = document.getElementById('tableSurah');
+		
+		function clickSurah(evt) {
+		  var tNum = evt.srcElement.name;
+		  //menampilkan info surah
+		  getSurah = findSurah(dataJSONSurah, tNum);
+		  showDetailSurah(getSurah);
+		}
+
+		function pushDataSurah() {
+		  // Mendapatkan referensi ke elemen tbody
+		  var tbody = document.getElementById('dataSurah');
+		  if (tbody.childElementCount <= 0) {
+			// Menghitung jumlah kolom
+			var numColumns = 3;
+			// Mengisi data ke dalam tabel dengan kelompok 3 surah per kolom
+			for (var i = 0; i < dataJSONSurah.data.length; i += numColumns) {
+			  var row = document.createElement('tr');
+			  for (var j = 0; j < numColumns; j++) {
+				var currentIndex = i + j;
+				if (currentIndex < dataJSONSurah.data.length) {
+				  var cell = document.createElement('td');
+				  cell.innerHTML = '<b>' + dataJSONSurah.data[currentIndex].id + '</b>' + '<br>' +
+				  dataJSONSurah.data[currentIndex].transliteration + '<br>' +
+				  dataJSONSurah.data[currentIndex].arabic;
+				  cell.name = dataJSONSurah.data[currentIndex].id;
+				  cell.addEventListener('click', clickSurah);
+				  row.appendChild(cell);
+				}
+			  }
+			  tbody.appendChild(row);
+			}
+		  }
+		}
+
+		function hideTableSurah() {
+		  tabelDataSurah.style.display = 'none';
+		  btnSurah.innerHTML = 'Tampilkan daftar surah';
+		}
+
+		function clickBtnSurah(evt) {
+		  pushDataSurah();
+		  // Toggle btnSurah
+		  if (evt.target.innerHTML.includes('Tampilkan daftar surah')) {
+			evt.target.innerHTML = 'Sembunyikan';
+			tabelDataSurah.style.display = '';
+		  } else {
+			evt.target.innerHTML = 'Tampilkan daftar surah';
+			tabelDataSurah.style.display = 'none';
+		  }
+		}
 
       function fetchAPI(apiUrl) {
         return fetch(apiUrl).then(response => {
@@ -186,11 +262,7 @@
           })
         }
       };
-      fetchAPISurah(apiSurah);
-      btnCari.addEventListener('click', function() {
-        showAlert();
-      });
-
+	  
       function showAlert() {
         swal({
           text: 'Search for a surah. e.g. "Al Fatihah". atau tuliskan nomor surah',
@@ -208,7 +280,7 @@
             if (!getSurah) {
               return swal("No surah was found!");
             }
-            console.log(getSurah);
+            //console.log(getSurah);
             // Menyisipkan HTML
             const wrapper = document.createElement('div');
             wrapper.innerHTML = dataJSONSurah2[getSurah.id - 1].deskripsi;
@@ -222,12 +294,8 @@
                 confirm: true,
               },
             });
-            //memutar audio surah
-            playAudio(apiAudioFull + convertToNDigits(getSurah.id) + ".mp3");
-            //menampilkan info surah
-            showInfoSurah(getSurah);
-            //menampilkan seluruh ayat
-            showAyah(getSurah.id);
+            //menampilkan surah yang dicari, meliputi info, ayat, dan audio
+            showDetailSurah(getSurah);
           } else {
             swal("Astagfirullah", "Data masih dipersiapkan, silahkan ulangi", "error");
             swal.stopLoading();
@@ -236,9 +304,7 @@
           }
         })
       }
-      var cariSurahIni;
-      var infoSurah = "";
-
+	  
       function convertToNDigits(num, desiredLength = 3) {
         // Convert the number to a string
         var numString = num.toString();
@@ -262,10 +328,17 @@
         });
       }
 
-      function showInfoSurah(surah) {
+      function showDetailSurah(surah) {
+        hideTableSurah();
         var infoSurah = `${surah.transliteration} | ${surah.arabic} | arti : ${surah.translation} | surah ke : ${surah.id} | total ayat : ${surah.num_ayah}`;
         var divInfo = document.getElementById('infoSurah');
         divInfo.innerHTML = infoSurah;
+        //menampilkan seluruh ayat
+        showAyah(surah.id);
+        //memutar audio surah
+        playAudio(apiAudioFull + convertToNDigits(surah.id) + ".mp3");
+        // Untuk menggeser tampilan ke paling atas
+        window.scrollTo(0, 0);
       }
 
       function playAudio(url) {
@@ -334,10 +407,24 @@
             dataBody.appendChild(rowIndonesia);
           });
           infoAyat.style.display = 'block';
+          tabelAyah.style.display = 'block';
         }).catch(error => {
           console.error('There was a problem with the fetch operation:', error);
         });
       }
+	  
+		//call set
+		fetchAPISurah(apiSurah);
+
+		btnCari.addEventListener('click', function() {
+			showAlert();
+		});
+
+		mainAudio.addEventListener('play', function() {
+			audioAyah.pause();
+		});
+
+		btnSurah.addEventListener("click", clickBtnSurah);
     </script>
     <footer>
       <p>by <a href="https://instagram.com/riozi_25" target="_blank">riozi_25</a>
