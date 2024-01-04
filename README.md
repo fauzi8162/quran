@@ -5,7 +5,7 @@ api surah :
  "https://web-api.qurankemenag.net/quran-surah";
 
 api ayat :
-"https://web-api.qurankemenag.net/quran-ayah?surah=1"
+"https://web-api.qurankemenag.net/quran-ayah"
 
 api audio per ayat:
 "https://media.qurankemenag.net/audio/Abu_Bakr_Ash-Shaatree_aac64/"
