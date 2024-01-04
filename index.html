@@ -20,7 +20,7 @@
       }
 
       .container {
-        max-width: 800px;
+        max-width: 1000px;
         margin: 20px auto;
         padding: 20px;
         background-color: #fff;
@@ -55,7 +55,7 @@
       td {
         border: 1px solid #ddd;
         padding: 8px;
-        text-align: left;
+        text-align: center;
       }
 
       th {
@@ -65,11 +65,22 @@
       /* Tambahkan styling untuk rata tengah pada kolom Nomor */
       td.nomor {
         text-align: center;
-	font-size: 30px;
+        font-size: 20px;
+      }
+
+      @font-face {
+        font-family: 'LPMQ IsepMisbah';
+        /* Gantilah dengan nama font yang diinginkan */
+        src: url('LPMQ IsepMisbah.ttf') format('truetype');
+        font-weight: normal;
+        font-style: normal;
       }
 
       td.arab {
-        font-size: 40px;
+        font-family: 'LPMQ IsepMisbah', sans-serif;
+        /* Gunakan nama font yang Anda tetapkan di @font-face */
+        font-size: 20px;
+        font-weight: bold;
       }
 
       footer {
@@ -100,7 +111,8 @@
     <!-- <script src="../lib/sweetalert.min.js"></script> -->
     <script src="https://unpkg.com/sweetalert/dist/sweetalert.min.js"></script>
     <header>
-      <h1>quran api</h1>
+      <h1>Alquran Apps</h1>
+      <h4>source : Quran Kemenag Rest API | web-api.qurankemenag.net</h4>
     </header>
     <div class="container">
       <button id="btnCari">Cari Surah</button>
@@ -108,12 +120,16 @@
       <audio id="audioPlayer" controls>
         <source src="" type="audio/mp3"> Your browser does not support the audio element.
       </audio>
+      <audio id="audioPlayerAyah">
+        <source src="" type="audio/mp3"> Your browser does not support the audio element.
+      </audio>
       <div id="infoAyat" align="center" style="display: none;">
         <table>
           <thead>
             <tr>
-              <th>Nomor</th>
+              <th>No</th>
               <th>Ayat</th>
+              <th>Audio</th>
             </tr>
           </thead>
           <tbody id="dataBody"></tbody>
@@ -121,12 +137,56 @@
       </div>
     </div>
     <script>
+      var getSurah; //menyimpan data sudah yg berhasil dicari
+      var dataKeyword; //menyimpan kata kunci yang dicari user
+      var dataJSONSurah = "";
+      var dataJSONSurah2 = "";
+      var apiAudioFull = "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/"; // 001.mp3
+      var apiAudioAyah = "https://media.qurankemenag.net/audio/Abu_Bakr_Ash-Shaatree_aac64/"; // 002007.m4a
+      var apiSurah2 = "https://quran-api.santrikoding.com/api/surah"; // saya gunakan untuk ambil deskripsinya saja
+      var apiSurah = "https://web-api.qurankemenag.net/quran-surah";
+      var apiAyah = "https://web-api.qurankemenag.net/quran-ayah?surah=";
+      // var apiAyah = "https://web-api.qurankemenag.net/quran-ayah?start=0&limit=10&surah=2"; 
+      /*
+      api Ayah parameter
+      ex : https://web-api.qurankemenag.net/quran-ayah?start=5&limit=20&surah=2
+      will showing surah number 2(al baqarah) from ayah 6 - ayah 25 (coz limit is showing until ayah n & start is showing from n)
+      */
       var btnCari = document.getElementById('btnCari');
       var infoAyat = document.getElementById('infoAyat');
       var nomorCell = document.getElementById('nomor');
       var arabCell = document.getElementById('arab');
       var terjemahanCell = document.getElementById('terjemahan');
       var indonesiaCell = document.getElementById('indonesia');
+      var audioAyah = document.getElementById('audioPlayerAyah');
+      var mainAudio = document.getElementById('audioPlayer');
+      mainAudio.addEventListener('play', function() {
+        audioAyah.pause();
+        // Tambahkan logika atau panggil fungsi yang ingin Anda eksekusi saat tombol play diklik
+      });
+
+      function fetchAPI(apiUrl) {
+        return fetch(apiUrl).then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok, please try again');
+          }
+          return response.json();
+        }).catch(error => {
+          console.error('There was a problem with the fetch operation:', error);
+        });
+      };
+
+      function fetchAPISurah(apiUrl) {
+        if (dataJSONSurah == null || dataJSONSurah == "") {
+          fetchAPI(apiSurah2).then(data => {
+            dataJSONSurah2 = data;
+          })
+          fetchAPI(apiSurah).then(data => {
+            dataJSONSurah = data;
+          })
+        }
+      };
+      fetchAPISurah(apiSurah);
       btnCari.addEventListener('click', function() {
         showAlert();
       });
@@ -139,120 +199,132 @@
             text: "Search!",
             closeModal: false,
           },
-        }).then(surahName => {
-          if (!surahName) throw null;
-          cariSurahIni = surahName;
-          return fetch('https://al-quran-8d642.firebaseio.com/data.json?print=pretty');
-        }).then(response => response.json()).then(data => {
-          var surahName = cariSurahIni;
-          var surah;
-          if (isNaN(surahName)) surah = findSurahByName(data, surahName);
-          else surah = findSurahByNomor(data, surahName);
-          if (!surah) {
-            return swal("No surah was found!");
-          }
-          console.log(surah);
-          playAudio(surah.audio);
-          // Menyisipkan HTML
-          const wrapper = document.createElement('div');
-          wrapper.innerHTML = surah.keterangan;
-          showInfoSurah(surah);
-          swal({
-            title: "Surah Information:",
-            text: `${surah.nama} | ${surah.asma} | arti : ${surah.arti} | surah ke : ${surah.nomor}`,
-            icon: "success",
-            content: wrapper,
-      	showCancelButton: false,
-          });
-        }).catch(err => {
-          if (err) {
-            swal("Oh noes!", "The AJAX request failed!", "error");
+        }).then(keyword => {
+          if (!keyword) throw null;
+          dataKeyword = keyword;
+          if (dataJSONSurah) {
+            getSurah = "";
+            getSurah = findSurah(dataJSONSurah, (dataKeyword + ""));
+            if (!getSurah) {
+              return swal("No surah was found!");
+            }
+            console.log(getSurah);
+            // Menyisipkan HTML
+            const wrapper = document.createElement('div');
+            wrapper.innerHTML = dataJSONSurah2[getSurah.id - 1].deskripsi;
+            swal({
+              title: "Surah Information:",
+              text: `${getSurah.transliteration} | ${getSurah.arabic} | arti : ${getSurah.translation} | surah ke : ${getSurah.id}`,
+              icon: "success",
+              content: wrapper,
+              buttons: {
+                cancel: false,
+                confirm: true,
+              },
+            });
+            //memutar audio surah
+            playAudio(apiAudioFull + convertToNDigits(getSurah.id) + ".mp3");
+            //menampilkan info surah
+            showInfoSurah(getSurah);
+            //menampilkan seluruh ayat
+            showAyah(getSurah.id);
           } else {
+            swal("Astagfirullah", "Data masih dipersiapkan, silahkan ulangi", "error");
             swal.stopLoading();
             swal.close();
+            fetchAPISurah(apiSurah);
           }
-        });
+        })
       }
       var cariSurahIni;
       var infoSurah = "";
 
-      function findSurahByName(data, name) {
-        // Logic to find and return the surah by name
-        const surahList = Object.values(data);
-        const lowerCaseName = name.toLowerCase();
-        return surahList.find(surah => surah.nama.toLowerCase().includes(lowerCaseName));
+      function convertToNDigits(num, desiredLength = 3) {
+        // Convert the number to a string
+        var numString = num.toString();
+        // Calculate the number of leading zeros needed
+        var leadingZeros = Math.max(0, desiredLength - numString.length);
+        // Add leading zeros based on the desired length
+        for (var i = 0; i < leadingZeros; i++) {
+          numString = "0" + numString;
+        }
+        return numString;
       }
 
-      function findSurahByNomor(data, nomor) {
+      function findSurah(data, keyword) {
         // Logic to find and return the surah by name
-        const surahList = Object.values(data);
-        return surahList.find(surah => surah.nomor == nomor);
-      }
-
-      function playAudio(url) {
-        var audio = document.getElementById('audioPlayer');
-        audio.src = url; // Ganti URL_AUDIO_FILE dengan URL file audio Anda
-        audio.controls = true; // Menampilkan kontrol pemutar audio
-        audio.autoplay = true; // Otomatis memulai pemutaran audio
+        surahList = Object.values(data);
+        keyword = (keyword + "").toLowerCase();
+        //return surahList[0].find(surah => surah.nama.toLowerCase().includes(lowerCaseName));
+        // Melakukan pencarian berdasarkan kata kunci menggunakan Array.find()
+        return surahList[0].find(function(surah) {
+          return ((surah.id + "").includes(keyword) || surah.latin.toLowerCase().includes(keyword) || surah.transliteration.toLowerCase().includes(keyword) || surah.translation.toLowerCase().includes(keyword));
+        });
       }
 
       function showInfoSurah(surah) {
-        var infoSurah = `${surah.nama} | ${surah.asma} | arti : ${surah.arti} | surah ke : ${surah.nomor}`;
+        var infoSurah = `${surah.transliteration} | ${surah.arabic} | arti : ${surah.translation} | surah ke : ${surah.id} | total ayat : ${surah.num_ayah}`;
         var divInfo = document.getElementById('infoSurah');
         divInfo.innerHTML = infoSurah;
-        getSurah(surah.nomor);
       }
 
-      function getSurah(index) {
+      function playAudio(url) {
+        audioAyah.pause();
+        mainAudio.src = url; // Ganti URL_AUDIO_FILE dengan URL file audio Anda
+        mainAudio.controls = true; // Menampilkan kontrol pemutar audio
+        mainAudio.autoplay = true; // Otomatis memulai pemutaran audio
+      }
+
+      function playAudioAyah(evt, numAyah) {
+        var url = apiAudioAyah + convertToNDigits(getSurah.id) + convertToNDigits(evt.currentTarget.name) + ".m4a";
+        console.log(url);
+        mainAudio.pause();
+        audioAyah.pause();
+        audioAyah.src = url; // Ganti URL_AUDIO_FILE dengan URL file audio Anda
+        audioAyah.play();
+        // Toggle ikon play/pause
+        if (evt.target.innerHTML.includes('PLAY')) {
+          evt.target.innerHTML = 'PLAY';
+        } else {
+          evt.target.innerHTML = 'PLAY';
+        }
+      }
+
+      function showAyah(index) {
         var dataBody = document.getElementById('dataBody');
-        var getUrl = "https://al-quran-8d642.firebaseio.com/surat/" + index + ".json?print=pretty"
+        var getUrl = apiAyah + index;
         fetch(getUrl).then(response => {
           if (!response.ok) {
             throw new Error('Network response was not ok');
           }
           return response.json();
         }).then(data => {
-          console.log(data);
-          // Tampilkan data dalam tabel
-          /*data.forEach(function (item) {
-        var row = document.createElement('tr');
-        row.innerHTML = `
-						
-						<td>${item.nomor}</td>
-						<td>${item.ar}</td>
-						<td>${item.tr}</td>
-						<td>${item.id}</td>`;
-        dataBody.appendChild(row);
-      });
-	  */
-          /* data.forEach(function (item) {
-        var row = document.createElement('tr');
-        row.innerHTML = `
-						
-						<td>${item.nomor}</td>
-						<td>${item.ar}</td>`;
-        nomorCell.innerHTML = item.nomor;
-        arabCell.innerHTML = item.ar;
-        terjemahanCell.innerHTML = item.tr;
-        indonesiaCell.innerHTML = item.id;
-      });
-	  */
-		dataBody.innerHTML = ''; // clear data table before push data
-          data.forEach(function(item) {
+          dataBody.innerHTML = ''; // clear data table before push data
+          data.data.forEach(function(item) {
+            var playButton = document.createElement('button');
+            playButton.innerHTML = 'PLAY'; // Ganti dengan ikon play yang sesuai (gunakan Font Awesome atau ikon lain)
+            //playButton.setAttribute('data-ayah', item.ayah); // Menyimpan nomor ayat pada atribut data-ayah
+            playButton.name = item.ayah;
+            playButton.addEventListener("click", playAudioAyah);
             var row = document.createElement('tr');
+            var audioCell = document.createElement('td');
             var nomorCell = document.createElement('td');
             var arabCell = document.createElement('td');
             var terjemahanCell = document.createElement('td');
             var indonesiaCell = document.createElement('td');
-            nomorCell.setAttribute('rowspan', '3');
-            nomorCell.innerHTML = item.nomor
-            arabCell.innerHTML = item.ar;
-            terjemahanCell.innerHTML = item.tr;
-            indonesiaCell.innerHTML = item.id;
             nomorCell.className = "nomor"; // Tambahkan class untuk styling
             arabCell.className = "arab"; // Tambahkan class untuk styling
+            nomorCell.setAttribute('rowspan', '3');
+            audioCell.setAttribute('rowspan', '3');
+            //audioCell.innerHTML = "PLAY";
+            nomorCell.innerHTML = item.ayah;
+            arabCell.innerHTML = item.arabic;
+            terjemahanCell.innerHTML = item.latin;
+            indonesiaCell.innerHTML = item.translation;
+            audioCell.appendChild(playButton);
             row.appendChild(nomorCell);
             row.appendChild(arabCell);
+            row.appendChild(audioCell);
             var rowTerjemahan = document.createElement('tr');
             rowTerjemahan.appendChild(terjemahanCell);
             var rowIndonesia = document.createElement('tr');
