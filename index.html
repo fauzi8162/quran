@@ -126,6 +126,29 @@
         opacity: 0.8;
         /* Mengurangi kecerahan tautan saat dihover */
       }
+	  
+	   #selectDropDown {
+			text-align: center;
+        }
+		
+		select {
+            padding: 8px; /* Tambahkan padding untuk memperindah */
+            font-size: 16px; /* Ubah ukuran font */
+            border: 1px solid #ccc; /* Tambahkan border */
+            border-radius: 4px; /* Tambahkan sudut melengkung */
+            appearance: none; /* Hilangkan gaya default browser */
+            background-color: #f8f8f8; /* Warna latar belakang */
+            width: 300px; /* Atur lebar sesuai kebutuhan */
+            outline: none; /* Hilangkan outline pada fokus */
+            cursor: pointer; /* Ganti kursor saat diarahkan ke dropdown */
+			text-align: center;
+        }
+
+        /* Gaya untuk opsi dropdown */
+        option {
+            padding: 10px; /* Tambahkan padding untuk memperindah */
+        }
+		
     </style>
   </head>
   <body>
@@ -138,6 +161,14 @@
     <div class="container">
       <button id="btnCari">Cari Surah</button>
       <div id="infoSurah" align="center"></div>
+	  
+	  <div id="selectDropDown" style="display: none;">
+	  <label for="selectList">Pilih Qori:</label>
+    <select id="selectList" onchange="selectQori()">
+        <!-- Opsi Dropdown diisi melalui JavaScript -->
+    </select>
+	</div>
+	
       <audio id="audioPlayer">
         <source src="" type="audio/mp3"> Your browser does not support the audio element.
       </audio>
@@ -175,7 +206,7 @@
 		var dataJSONSurah = "";
 		var dataJSONSurah2 = "";
 		//var apiAudioFull = "https://download.quranicaudio.com/quran/mishaari_raashid_al_3afaasee/"; // 001.mp3
-	    	var apiAudioFull = " https://download.quranicaudio.com/quran/abu_bakr_ash-shatri_tarawee7/"; // 001.mp3
+	    var apiAudioFull = " https://download.quranicaudio.com/quran/"; // qori_name/001.mp3
 		var apiAudioAyah = "https://media.qurankemenag.net/audio/Abu_Bakr_Ash-Shaatree_aac64/"; // 002007.m4a
 		var apiSurah2 = "https://quran-api.santrikoding.com/api/surah"; // saya gunakan untuk ambil deskripsinya saja
 		var apiSurah = "https://web-api.qurankemenag.net/quran-surah";
@@ -191,6 +222,35 @@
 		var mainAudio = document.getElementById('audioPlayer');
 		var btnSurah = document.getElementById('btnSurah');
 		var tabelDataSurah = document.getElementById('tableSurah');
+		var qoriNameArr = ["Abu Bakr al-Shatri", "Abdul Basit Abdul Samad", "Abdullah Ali Jabir", "Aziz Alili", "Mishary Rashid Alafasy", "Saud Al-Shuraim"];
+		var qoriAudioNameArr = ["abu_bakr_ash-shatri_tarawee7", "abdul_basit_murattal", "ali_jaber", "aziz_alili", "mishaari_raashid_al_3afaasee", "sodais_and_shuraim"];
+		var qoriSelected = 4;
+        var selectList = document.getElementById('selectList');
+        var selectDropDown = document.getElementById('selectDropDown');
+
+        // Mengisi opsi dropdown dari array
+        for (var i = 0; i < qoriNameArr.length; i++) {
+            var option = document.createElement('option');
+            option.value = i; // Nilai opsi sesuai dengan indeks array
+            option.text = qoriNameArr[i]; // Text opsi sesuai dengan nilai array
+            selectList.appendChild(option);
+        }
+		selectList.selectedIndex = qoriSelected;
+		
+		 // Fungsi yang dipanggil saat pilihan diubah
+        function selectQori() {
+            var selectedValue = selectList.value;
+            var selectedIndex = selectList.selectedIndex
+            var selectedItem = qoriNameArr[selectedValue];
+			
+			//set
+			qoriSelected = selectedIndex;
+			var nUrl = apiAudioFull + qoriAudioNameArr[qoriSelected] + "/" + convertToNDigits(getSurah.id) + ".mp3";
+			mainAudio.pause();
+			mainAudio.src = nUrl;
+			//mainAudio.load();
+        }
+		
 		
 		function clickSurah(evt) {
 		  var tNum = evt.srcElement.name;
@@ -336,8 +396,8 @@
         divInfo.innerHTML = infoSurah;
         //menampilkan seluruh ayat
         showAyah(surah.id);
-        //memutar audio surah
-        playAudio(apiAudioFull + convertToNDigits(surah.id) + ".mp3");
+        //memutar audio surah		
+        playAudio(apiAudioFull + qoriAudioNameArr[qoriSelected] + "/" + convertToNDigits(surah.id) + ".mp3");
         // Untuk menggeser tampilan ke paling atas
         window.scrollTo(0, 0);
       }
@@ -348,7 +408,7 @@
         mainAudio.controls = true; // Menampilkan kontrol pemutar audio
         mainAudio.autoplay = true; // Otomatis memulai pemutaran audio
       }
-
+		
       function playAudioAyah(evt, numAyah) {
         var url = apiAudioAyah + convertToNDigits(getSurah.id) + convertToNDigits(evt.currentTarget.name) + ".m4a";
         console.log(url);
@@ -409,6 +469,7 @@
           });
           infoAyat.style.display = 'block';
           tabelAyah.style.display = 'block';
+          selectDropDown.style.display = 'block';
         }).catch(error => {
           console.error('There was a problem with the fetch operation:', error);
         });
